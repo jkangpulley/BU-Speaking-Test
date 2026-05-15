@@ -38,7 +38,8 @@ def test_scoring():
     except Exception as e:
         return {"status": "error", "message": str(e), **env_summary}
 
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "uploads")
+_data_dir = "/data" if os.path.isdir("/data") else os.path.join(os.path.dirname(__file__), "..", "..")
+UPLOAD_DIR = os.path.join(_data_dir, "uploads")
 
 
 # ── Students ──────────────────────────────────────────────────────────────────

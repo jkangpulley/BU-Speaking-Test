@@ -10,7 +10,8 @@ from ..auth import get_current_student
 
 router = APIRouter(prefix="/api", tags=["tests"])
 
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "uploads")
+_data_dir = "/data" if os.path.isdir("/data") else os.path.join(os.path.dirname(__file__), "..", "..")
+UPLOAD_DIR = os.path.join(_data_dir, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
