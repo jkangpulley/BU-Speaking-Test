@@ -2,14 +2,19 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Railway Volume이 /data에 마운트된 경우 사용, 없으면 로컬 파일
-_data_dir = "/data" if os.path.isdir("/data") else os.path.dirname(os.path.abspath(__file__))
-os.makedirs(_data_dir, exist_ok=True)
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{_data_dir}/speaking_test.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+if DATABASE_URL:
+    # Railway PostgreSQL: fix postgres:// → postgresql://
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    engine = create_engine(DATABASE_URL)
+else:
+    # 로컬 개발용 SQLite
+    _data_dir = "/data" if os.path.isdir("/data") else os.path.dirname(os.path.abspath(__file__))
+    os.makedirs(_data_dir, exist_ok=True)
+    DATABASE_URL = f"sqlite:///{_data_dir}/speaking_test.db"
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
