@@ -7,11 +7,6 @@ Each criterion: 0–4. Total per question: 0–20. Five questions: 0–100.
 import json
 import os
 from groq import Groq
-from dotenv import load_dotenv
-
-load_dotenv(override=True)
-
-
 def _get_client():
     key = os.getenv("GROQ_API_KEY")
     if not key:

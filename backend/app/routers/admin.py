@@ -19,8 +19,9 @@ def test_scoring():
     """채점 엔진 상태 확인"""
     import os
     key = os.getenv("GROQ_API_KEY", "")
+    all_keys = [k for k in os.environ.keys() if "GROQ" in k or "API" in k or "KEY" in k]
     if not key:
-        return {"status": "error", "message": "GROQ_API_KEY not set"}
+        return {"status": "error", "message": "GROQ_API_KEY not set", "env_keys_found": all_keys}
     try:
         from ..scoring import score_response
         result = score_response("What is your name?", "My name is Ivan.", 3.0)
