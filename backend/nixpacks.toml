@@ -1,2 +1,7 @@
+[build]
+cmds = [
+  "python -c \"import os; open('.env','w').write('GROQ_API_KEY='+os.environ.get('GROQ_API_KEY','')+chr(10)+'SECRET_KEY='+os.environ.get('SECRET_KEY','')+chr(10)+'DATABASE_URL='+os.environ.get('DATABASE_URL','')+chr(10))\""
+]
+
 [start]
 cmd = "python seed.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT"

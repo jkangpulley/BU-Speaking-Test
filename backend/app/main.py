@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()  # no override — Railway vars take precedence
+load_dotenv(override=True)  # reads .env written during build phase
 
 # Startup diagnostics (shows in Railway deploy logs)
 print("=== ENV DIAGNOSTICS ===")
