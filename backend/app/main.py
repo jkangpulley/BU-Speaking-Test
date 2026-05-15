@@ -13,13 +13,10 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Speaking Placement Test API", version="1.0.0")
 
-_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
-allowed_origins = [o.strip() for o in _origins.split(",")]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
