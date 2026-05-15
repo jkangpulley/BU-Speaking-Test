@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 font-sans;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl
+           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+           shadow-md hover:shadow-lg active:scale-95;
+  }
+  .btn-secondary {
+    @apply bg-white hover:bg-slate-100 text-slate-700 font-semibold px-6 py-3 rounded-xl
+           border border-slate-200 transition-all duration-200 active:scale-95;
+  }
+  .btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-3 rounded-xl
+           transition-all duration-200 shadow-md active:scale-95;
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-slate-100 p-6;
+  }
+  .input {
+    @apply w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none
+           focus:ring-2 focus:ring-blue-400 focus:border-transparent text-slate-800;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+}
+
+/* Recording pulse animation */
+@keyframes recordPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50%       { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+}
+.recording-pulse {
+  animation: recordPulse 1.5s ease-in-out infinite;
+}
+
+/* Timer bar */
+.timer-bar-fill {
+  transition: width 1s linear;
+}
