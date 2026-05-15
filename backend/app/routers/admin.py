@@ -13,6 +13,21 @@ from ..placement import run_placement
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
+
+@router.get("/test-scoring")
+def test_scoring():
+    """채점 엔진 상태 확인"""
+    import os
+    key = os.getenv("GROQ_API_KEY", "")
+    if not key:
+        return {"status": "error", "message": "GROQ_API_KEY not set"}
+    try:
+        from ..scoring import score_response
+        result = score_response("What is your name?", "My name is Ivan.", 3.0)
+        return {"status": "ok", "result": result}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "uploads")
 
 
@@ -167,7 +182,8 @@ def _score_test(test_id: int, db: Session):
                 transcript=response.transcript or "",
                 duration=response.duration_seconds or 0.0,
             )
-        except Exception:
+        except Exception as e:
+            print(f"[SCORING ERROR] response {response.id}: {e}")
             continue
 
         response.task_completion = result["task_completion"]
