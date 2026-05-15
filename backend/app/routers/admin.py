@@ -19,16 +19,24 @@ def test_scoring():
     """채점 엔진 상태 확인"""
     import os
     key = os.getenv("GROQ_API_KEY", "")
-    # 모든 환경변수 이름 반환 (값은 노출 안 함)
+    secret = os.getenv("SECRET_KEY", "")
+    port = os.getenv("PORT", "")
     all_env_keys = sorted(os.environ.keys())
+    env_summary = {
+        "GROQ_API_KEY": f"SET (starts with {key[:8]}...)" if key else "MISSING",
+        "SECRET_KEY": f"SET ({len(secret)} chars)" if secret else "MISSING",
+        "PORT": port or "MISSING",
+        "total_env_vars": len(all_env_keys),
+        "all_env_keys": all_env_keys,
+    }
     if not key:
-        return {"status": "error", "message": "GROQ_API_KEY not set", "all_env_keys": all_env_keys}
+        return {"status": "error", "message": "GROQ_API_KEY not set", **env_summary}
     try:
         from ..scoring import score_response
         result = score_response("What is your name?", "My name is Ivan.", 3.0)
-        return {"status": "ok", "result": result}
+        return {"status": "ok", "result": result, **env_summary}
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": str(e), **env_summary}
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "uploads")
 

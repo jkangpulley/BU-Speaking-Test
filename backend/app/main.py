@@ -1,6 +1,14 @@
 import os
 from dotenv import load_dotenv
-load_dotenv(override=True)
+load_dotenv()  # no override — Railway vars take precedence
+
+# Startup diagnostics (shows in Railway deploy logs)
+print("=== ENV DIAGNOSTICS ===")
+print(f"GROQ_API_KEY present: {'GROQ_API_KEY' in os.environ}")
+print(f"SECRET_KEY present: {'SECRET_KEY' in os.environ}")
+print(f"PORT: {os.environ.get('PORT', 'NOT SET')}")
+print(f"All keys count: {len(os.environ)}")
+print("=======================")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
