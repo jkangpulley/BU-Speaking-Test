@@ -32,8 +32,12 @@ def create_token(data: dict) -> str:
 
 def decode_token(token: str) -> dict:
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
+        result = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return result
+    except JWTError as e:
+        print(f"[DEBUG] JWT 오류: {e}")
+        print(f"[DEBUG] SECRET_KEY: {SECRET_KEY}")
+        print(f"[DEBUG] Token 앞 20자: {token[:20]}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
@@ -44,7 +48,7 @@ def get_current_student(
     payload = decode_token(credentials.credentials)
     if payload.get("role") != "student":
         raise HTTPException(status_code=403, detail="Student access required")
-    student = db.query(Student).filter(Student.id == payload["sub"]).first()
+    student = db.query(Student).filter(Student.id == int(payload["sub"])).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     return student
@@ -57,7 +61,7 @@ def get_current_admin(
     payload = decode_token(credentials.credentials)
     if payload.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    admin = db.query(Admin).filter(Admin.id == payload["sub"]).first()
+    admin = db.query(Admin).filter(Admin.id == int(payload["sub"])).first()
     if not admin:
         raise HTTPException(status_code=404, detail="Admin not found")
     return admin

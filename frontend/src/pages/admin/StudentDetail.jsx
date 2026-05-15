@@ -65,6 +65,20 @@ export default function StudentDetail() {
     }
   }
 
+  const triggerRescore = async (testId) => {
+    setScoring(true)
+    setMsg('')
+    try {
+      await api.post(`/admin/rescore/${testId}`)
+      setMsg('재채점이 시작되었습니다. 30초 후 새로고침하세요.')
+      setTimeout(() => { load(); setMsg('') }, 35000)
+    } catch {
+      setMsg('재채점 오류가 발생했습니다.')
+    } finally {
+      setScoring(false)
+    }
+  }
+
   if (!student) {
     return (
       <AdminLayout>
@@ -139,7 +153,7 @@ export default function StudentDetail() {
                     {test.completed_at && ` · 완료: ${new Date(test.completed_at).toLocaleString('ko-KR')}`}
                   </p>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center flex-wrap">
                   {test.status === 'completed' && (
                     <button
                       onClick={() => triggerScoring(test.id)}
@@ -149,7 +163,16 @@ export default function StudentDetail() {
                       {scoring ? '채점 중…' : '🤖 AI 채점'}
                     </button>
                   )}
-                  <button onClick={load} className="btn-secondary text-sm py-2 px-4">🔄</button>
+                  {test.status === 'scored' && (
+                    <button
+                      onClick={() => triggerRescore(test.id)}
+                      disabled={scoring}
+                      className="btn-secondary text-sm py-2 px-4"
+                    >
+                      {scoring ? '재채점 중…' : '🔄 재채점'}
+                    </button>
+                  )}
+                  <button onClick={load} className="btn-secondary text-sm py-2 px-4">🔄 새로고침</button>
                 </div>
               </div>
 

@@ -6,9 +6,17 @@ Each criterion: 0–4. Total per question: 0–20. Five questions: 0–100.
 
 import json
 import os
-import anthropic
+from groq import Groq
+from dotenv import load_dotenv
 
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+load_dotenv(override=True)
+
+
+def _get_client():
+    key = os.getenv("GROQ_API_KEY")
+    if not key:
+        raise ValueError("GROQ_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요.")
+    return Groq(api_key=key)
 
 SYSTEM_PROMPT = """You are an expert English language teacher specializing in assessing young learners (ages 8–18) who come from Russia, Kazakhstan, or Uzbekistan. Your assessments are fair, encouraging, and calibrated for non-native speakers at school level.
 
@@ -69,14 +77,16 @@ Student's transcript: {transcript}
 
 Speaking duration: {duration:.1f} seconds"""
 
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
+    client = _get_client()
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
         max_tokens=400,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_message}],
     )
-
-    text = response.content[0].text.strip()
+    text = response.choices[0].message.content.strip()
 
     # Extract JSON even if there is surrounding text
     start = text.find("{")

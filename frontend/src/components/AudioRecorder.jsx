@@ -1,48 +1,33 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 
-/**
- * AudioRecorder
- * Props:
- *  - onRecordingComplete(blob, transcript, durationSec)
- *  - maxSeconds   (default 60)
- *  - prepSeconds  (default 15)
- *  - disabled
- */
 export default function AudioRecorder({
   onRecordingComplete,
   maxSeconds = 60,
   prepSeconds = 15,
   disabled = false,
 }) {
-  const [phase, setPhase] = useState('idle')       // idle | prep | recording | done
-  const [countdown, setCountdown]   = useState(0)
-  const [elapsed, setElapsed]       = useState(0)
+  const [phase, setPhase]         = useState('idle')
+  const [countdown, setCountdown] = useState(0)
+  const [elapsed, setElapsed]     = useState(0)
   const [transcript, setTranscript] = useState('')
-  const [audioUrl, setAudioUrl]     = useState(null)
-  const [hasAudio, setHasAudio]     = useState(false)
+  const [audioUrl, setAudioUrl]   = useState(null)
+  const [hasAudio, setHasAudio]   = useState(false)
 
   const mediaRecorderRef = useRef(null)
   const chunksRef        = useRef([])
-  const recognitionRef   = useRef(null)
   const timerRef         = useRef(null)
   const startTimeRef     = useRef(null)
-  const blobRef          = useRef(null)
   const transcriptRef    = useRef('')
 
-  // Keep ref in sync for async callbacks
   useEffect(() => { transcriptRef.current = transcript }, [transcript])
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop()
     }
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop() } catch (_) {}
-    }
     clearInterval(timerRef.current)
   }, [])
 
-  // Auto-stop when maxSeconds reached
   useEffect(() => {
     if (phase === 'recording') {
       timerRef.current = setInterval(() => {
@@ -54,7 +39,6 @@ export default function AudioRecorder({
     return () => clearInterval(timerRef.current)
   }, [phase, maxSeconds, stopRecording])
 
-  // Prep countdown
   const startPrep = () => {
     if (disabled) return
     setPhase('prep')
@@ -63,16 +47,12 @@ export default function AudioRecorder({
     setAudioUrl(null)
     setHasAudio(false)
     setElapsed(0)
-    blobRef.current = null
 
     let remaining = prepSeconds
     const id = setInterval(() => {
       remaining -= 1
       setCountdown(remaining)
-      if (remaining <= 0) {
-        clearInterval(id)
-        startActualRecording()
-      }
+      if (remaining <= 0) { clearInterval(id); startActualRecording() }
     }, 1000)
   }
 
@@ -89,15 +69,13 @@ export default function AudioRecorder({
       return
     }
 
-    // MediaRecorder
     const mr = new MediaRecorder(stream, { mimeType: getSupportedMimeType() })
     mediaRecorderRef.current = mr
-    mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+    mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
     mr.onstop = () => {
       stream.getTracks().forEach(t => t.stop())
       const blob = new Blob(chunksRef.current, { type: mr.mimeType })
-      blobRef.current = blob
-      const url = URL.createObjectURL(blob)
+      const url  = URL.createObjectURL(blob)
       setAudioUrl(url)
       setHasAudio(true)
       const duration = Math.floor((Date.now() - startTimeRef.current) / 1000)
@@ -106,34 +84,37 @@ export default function AudioRecorder({
     }
     mr.start(200)
 
-    // Web Speech API (best-effort)
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (SpeechRecognition) {
-      const rec = new SpeechRecognition()
-      recognitionRef.current = rec
-      rec.lang = 'en-US'
-      rec.continuous = true
-      rec.interimResults = true
-      rec.onresult = (event) => {
-        let final = ''
-        for (const r of event.results) {
-          if (r.isFinal) final += r[0].transcript + ' '
+    // Web Speech API — auto-restart on end
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SR) {
+      const startRec = () => {
+        const rec = new SR()
+        rec.lang = 'en-US'
+        rec.continuous = true
+        rec.interimResults = true
+        rec.onresult = event => {
+          let newFinal = ''
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal) newFinal += event.results[i][0].transcript + ' '
+          }
+          if (newFinal.trim()) {
+            setTranscript(prev => (prev + ' ' + newFinal).trim())
+          }
         }
-        if (final) {
-          setTranscript(prev => (prev + ' ' + final).trim())
+        rec.onerror = () => {}
+        rec.onend = () => {
+          if (mediaRecorderRef.current?.state === 'recording') {
+            try { startRec() } catch (_) {}
+          }
         }
+        try { rec.start() } catch (_) {}
       }
-      rec.onerror = () => {}
-      try { rec.start() } catch (_) {}
+      startRec()
     }
 
     startTimeRef.current = Date.now()
     setElapsed(0)
     setPhase('recording')
-  }
-
-  const handleStop = () => {
-    stopRecording()
   }
 
   const handleReRecord = () => {
@@ -145,30 +126,37 @@ export default function AudioRecorder({
     setElapsed(0)
   }
 
-  const pct = Math.min((elapsed / maxSeconds) * 100, 100)
+  const pct       = Math.min((elapsed / maxSeconds) * 100, 100)
   const remaining = Math.max(maxSeconds - elapsed, 0)
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-5">
 
       {/* IDLE */}
       {phase === 'idle' && (
         <button
           onClick={startPrep}
           disabled={disabled}
-          className="btn-primary flex items-center gap-3 text-lg px-8 py-4"
+          className="w-36 h-36 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95
+                     text-white flex flex-col items-center justify-center gap-2
+                     shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span className="text-2xl">🎤</span>
-          준비 시작 / Start Preparation
+          <span className="text-5xl">🎤</span>
+          <span className="text-sm font-semibold">시작 / Start</span>
         </button>
       )}
 
       {/* PREP */}
       {phase === 'prep' && (
         <div className="flex flex-col items-center gap-3">
-          <div className="text-5xl font-bold text-blue-600">{countdown}</div>
-          <p className="text-slate-500 text-sm">준비하세요 — 곧 녹음이 시작됩니다</p>
-          <p className="text-slate-400 text-xs">Get ready — recording starts soon</p>
+          <div className="w-32 h-32 rounded-full bg-amber-100 border-4 border-amber-400
+                          flex flex-col items-center justify-center">
+            <span className="text-5xl font-bold text-amber-600">{countdown}</span>
+          </div>
+          <p className="text-slate-600 font-medium text-center">
+            준비하세요!<br />
+            <span className="text-sm text-slate-400">Get ready to speak…</span>
+          </p>
         </div>
       )}
 
@@ -176,21 +164,26 @@ export default function AudioRecorder({
       {phase === 'recording' && (
         <div className="flex flex-col items-center gap-4 w-full">
           <button
-            onClick={handleStop}
-            className="w-24 h-24 rounded-full bg-red-500 hover:bg-red-600 text-white
-                       flex items-center justify-center text-4xl recording-pulse transition-all"
+            onClick={stopRecording}
+            className="w-36 h-36 rounded-full bg-red-500 hover:bg-red-600 active:scale-95
+                       text-white flex flex-col items-center justify-center gap-2
+                       shadow-xl transition-all recording-pulse"
           >
-            ⏹
+            <span className="text-5xl">⏹</span>
+            <span className="text-sm font-semibold">중지 / Stop</span>
           </button>
-          <p className="text-red-500 font-semibold animate-pulse">● 녹음 중 / Recording…</p>
 
-          {/* Timer bar */}
-          <div className="w-full max-w-sm">
+          <p className="text-red-500 font-semibold animate-pulse text-sm">
+            ● 녹음 중 / Recording…
+          </p>
+
+          {/* 타이머 바 */}
+          <div className="w-full max-w-xs">
             <div className="flex justify-between text-xs text-slate-400 mb-1">
-              <span>{elapsed}s</span>
-              <span>남은 시간 / {remaining}s left</span>
+              <span>{elapsed}초</span>
+              <span>남은 시간 {remaining}초</span>
             </div>
-            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+            <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
               <div
                 className="h-full bg-red-500 timer-bar-fill rounded-full"
                 style={{ width: `${pct}%` }}
@@ -198,11 +191,11 @@ export default function AudioRecorder({
             </div>
           </div>
 
-          {/* Live transcript */}
+          {/* 실시간 전사 */}
           {transcript && (
-            <div className="w-full max-w-sm bg-blue-50 rounded-xl p-3 text-sm text-slate-600 border border-blue-100">
-              <p className="text-xs text-blue-400 mb-1 font-medium">실시간 인식 / Live transcript</p>
-              {transcript}
+            <div className="w-full max-w-xs bg-blue-50 rounded-2xl p-3 text-sm text-slate-600 border border-blue-100">
+              <p className="text-xs text-blue-400 mb-1 font-medium">실시간 인식</p>
+              <p className="leading-relaxed">{transcript}</p>
             </div>
           )}
         </div>
@@ -210,17 +203,16 @@ export default function AudioRecorder({
 
       {/* DONE */}
       {phase === 'done' && hasAudio && (
-        <div className="flex flex-col items-center gap-4 w-full max-w-sm">
-          <div className="flex items-center gap-2 text-green-600 font-semibold">
-            <span className="text-2xl">✅</span>
-            녹음 완료! / Recording complete!
+        <div className="flex flex-col items-center gap-4 w-full max-w-xs">
+          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
+            <span className="text-4xl">✅</span>
           </div>
-          <audio controls src={audioUrl} className="w-full" />
-          <p className="text-xs text-slate-400 text-center">
-            다시 녹음하려면 아래 버튼을 누르세요.<br />
-            Press below to re-record.
+          <p className="font-semibold text-green-700 text-center">
+            녹음 완료!<br />
+            <span className="text-sm font-normal text-slate-500">Recording complete</span>
           </p>
-          <button onClick={handleReRecord} className="btn-secondary text-sm py-2 px-4">
+          <audio controls src={audioUrl} className="w-full" />
+          <button onClick={handleReRecord} className="btn-secondary text-sm py-2.5 px-6 rounded-xl">
             🔄 다시 녹음 / Re-record
           </button>
         </div>
@@ -230,12 +222,7 @@ export default function AudioRecorder({
 }
 
 function getSupportedMimeType() {
-  const types = [
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/ogg;codecs=opus',
-    'audio/mp4',
-  ]
+  const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']
   for (const type of types) {
     if (MediaRecorder.isTypeSupported(type)) return type
   }

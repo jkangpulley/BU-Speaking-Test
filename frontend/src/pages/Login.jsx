@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/client'
+import BaekseokLogo from '../components/BaekseokLogo'
 
 export default function Login() {
   const [username, setUsername] = useState('')
@@ -27,75 +28,87 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-700 px-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🎤</div>
-          <h1 className="text-3xl font-bold text-white">English Speaking Test</h1>
-          <p className="text-blue-200 mt-2">Baekseok University Placement Exam</p>
-        </div>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-700 to-indigo-800">
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-semibold text-slate-700 mb-6 text-center">
-            로그인 / Sign In
-          </h2>
+      {/* 상단 로고 바 */}
+      <header className="px-6 py-4">
+        <BaekseokLogo size="sm" dark />
+      </header>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1">
-                아이디 / Username
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                className="input"
-                placeholder="Enter your username"
-                required
-                autoFocus
-              />
-            </div>
+      {/* 메인 */}
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-sm">
 
-            <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1">
-                비밀번호 / Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="input"
-                placeholder="Enter your password"
-                required
-              />
-            </div>
+          {/* 타이틀 */}
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4">🎤</div>
+            <h1 className="text-2xl font-bold text-white leading-tight">
+              English Speaking<br />Placement Test
+            </h1>
+            <p className="text-blue-200 text-sm mt-1">영어 말하기 배치고사</p>
+            <p className="text-blue-300 text-xs mt-0.5">Тест на уровень владения английским</p>
+          </div>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
-                {error}
+          {/* 카드 */}
+          <div className="bg-white rounded-3xl shadow-2xl p-7">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                  아이디 / Username / Имя пользователя
+                </label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  className="input text-base"
+                  placeholder="Username"
+                  required
+                  autoFocus
+                  autoCapitalize="none"
+                />
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full mt-2"
-            >
-              {loading ? '로그인 중...' : '로그인 / Login'}
-            </button>
-          </form>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                  비밀번호 / Password / Пароль
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="input text-base"
+                  placeholder="Password"
+                  required
+                />
+              </div>
 
-          <p className="text-center text-xs text-slate-400 mt-6">
-            시험 중 브라우저를 닫지 마세요.<br />
-            Do not close the browser during the test.
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full text-base py-4 mt-2 rounded-2xl"
+              >
+                {loading ? '로그인 중… / Logging in… / Вход…' : '로그인 / Login / Войти'}
+              </button>
+            </form>
+
+            <p className="text-center text-xs text-slate-400 mt-5 leading-relaxed">
+              시험 중 브라우저를 닫지 마세요.<br />
+              Do not close the browser during the test.<br />
+              Не закрывайте браузер во время теста.
+            </p>
+          </div>
+
+          <p className="text-center text-blue-300 text-xs mt-5 leading-relaxed">
+            © 2026 백석대학교 · Baekseok University<br />
+            Центр английского языка
           </p>
         </div>
-
-        <p className="text-center text-blue-200 text-sm mt-4">
-          © 2025 Baekseok University — English Education Center
-        </p>
       </div>
     </div>
   )

@@ -208,6 +208,35 @@ def score_test(
     return {"status": "scoring_started"}
 
 
+@router.post("/rescore/{test_id}")
+def rescore_test(
+    test_id: int,
+    background_tasks: BackgroundTasks,
+    _admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """강제 재채점 — 기존 점수를 초기화하고 다시 채점"""
+    test = db.query(Test).filter(Test.id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    # 기존 점수 초기화
+    for resp in test.responses:
+        resp.scored_at = None
+        resp.task_completion = None
+        resp.fluency = None
+        resp.vocabulary = None
+        resp.grammar = None
+        resp.communication = None
+        resp.total_score = None
+        resp.feedback = None
+    test.status = "completed"
+    test.total_score = None
+    test.level = None
+    db.commit()
+    background_tasks.add_task(_score_test, test_id, SessionLocal())
+    return {"status": "rescoring_started"}
+
+
 @router.post("/score-all")
 def score_all(
     background_tasks: BackgroundTasks,
